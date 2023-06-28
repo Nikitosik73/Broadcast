@@ -1,5 +1,7 @@
 package ru.paramonov.brodcast
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
@@ -8,7 +10,14 @@ import ru.paramonov.brodcast.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private val receiver = MyReceiver()
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == MyService.ACTION_LOADED) {
+                val percent = intent.getIntExtra(MyService.PERCENT, 0)
+                binding.progressBar.progress = percent
+            }
+        }
+    }
 
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
@@ -26,11 +35,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         val intentFilter = IntentFilter().apply {
-            addAction(Intent.ACTION_BATTERY_LOW)
-            addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
-            addAction(MyReceiver.ACTION_CLICKED)
+            addAction(MyService.ACTION_LOADED)
         }
+
         registerReceiver(receiver, intentFilter)
+        Intent(this, MyService::class.java).apply {
+            startService(this)
+        }
     }
 
     override fun onDestroy() {
